@@ -3,7 +3,7 @@ DROP TAbLE crush;
 
 CREATE TABLE user (
 	userID varchar(255) primary key,
-	token varchar(255) NOT NULL 
+	fbToken varchar(255) NOT NULL 
 );
 
 CREATE TABLE crush (
