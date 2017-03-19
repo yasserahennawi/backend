@@ -1,6 +1,6 @@
 package com.nsfl.gocrush.ModelLayer;
 
-public abstract class User {
+public class User {
 
     private String userID;
     private String fbToken;
