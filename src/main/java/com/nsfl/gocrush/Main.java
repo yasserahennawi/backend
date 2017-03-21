@@ -14,6 +14,7 @@ import static spark.Spark.post;
 
 public class Main {
 
+
     public static void main(String[] args) {
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -31,7 +32,8 @@ public class Main {
                 return null;
             }
         });
-        get("/", (req, res) -> {
+  
+          get("/", (req, res) -> {
 
             return "Hello World!";
 
