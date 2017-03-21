@@ -20,11 +20,17 @@ public class AppConfig {
 
     private AppConfig() {
         try {
+            System.out.println("1");
             Class.forName("com.mysql.jdbc.Driver");
+            System.out.println("2");
             con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/gocrush", "root", "NoraKhaled1932014");
+                    "jdbc:mysql://localhost:3306/gocrush", "root", "");
+            if (con != null) {
+                System.out.println("Connected to the database");
+            }
 
         } catch (SQLException | ClassNotFoundException e) {
+            System.out.println("Not connected");
             System.err.println(e.getMessage());
 
         }

@@ -45,7 +45,7 @@ public class Authentication {
         }
     }
 
-    public String decode(String token) throws UnsupportedEncodingException {
+    public String getUserID(String token) throws UnsupportedEncodingException {
 
         try {
             JWT jwt = JWT.decode(token);

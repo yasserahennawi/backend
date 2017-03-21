@@ -1,6 +1,8 @@
 package com.nsfl.gocrush.ApplicationLayer.Command;
 
 import com.google.gson.Gson;
+import com.nsfl.gocrush.DBLayer.UserSQLRepository;
+import com.nsfl.gocrush.ModelLayer.NormalUser;
 import com.nsfl.gocrush.Utility.Authentication;
 import com.nsfl.gocrush.Utility.HTTPRequest;
 import com.restfb.*;
@@ -14,8 +16,10 @@ public class HomepageDataCommand {
     private Authentication auth;
     private HTTPRequest httpRequest;
     private Gson gson;
+    private UserSQLRepository sqlUser;
 
-    public HomepageDataCommand(String token, Authentication auth, HTTPRequest httpRequest, Gson gson) {
+    public HomepageDataCommand(String token, Authentication auth, HTTPRequest httpRequest, Gson gson, UserSQLRepository sqlUser) {
+        this.sqlUser = sqlUser;
         this.gson = gson;
         this.httpRequest = httpRequest;
         this.token = token;
@@ -23,15 +27,15 @@ public class HomepageDataCommand {
     }
 
     public String excute() throws UnsupportedEncodingException {
-        System.out.println("ay 7kaya");
         ArrayList<String> homepageData = new ArrayList();
-        String userID = auth.decode(token);
-        String token = "EAACEdEose0cBAIucTRhLRZBqVSMA0QFBPlNgNq7PkDZBuIZBcoK8sRTfBub5hFNJTa24cZArMMaZAWYSSZBlFyHuHqe25rImx3qFA7YZAbqSAZCqaHu4Grf04BhRRQ33sHfOPPkq3wJPOTcvvgb5c4NykYejeZASZB6wDzyZA6cPWcUskWoPxWfqdDBiccIZCZBJ1S8gZD";
-        FacebookClient facebookClient = new DefaultFacebookClient(token, Version.LATEST);
+        String fbToken = this.sqlUser.getUserById(auth.getUserID(token)).getFbToken();
+        // TODO validate facebook token isn't expired
+        FacebookClient facebookClient = new DefaultFacebookClient(fbToken, Version.LATEST);
         User user = facebookClient.fetchObject("me", User.class);
         System.out.println(user.getName());
         homepageData.add(user.getName());
         homepageData.add("Photo");
+        // TODO return data as key value Json not just array 
         return gson.toJson(homepageData);
     }
 }

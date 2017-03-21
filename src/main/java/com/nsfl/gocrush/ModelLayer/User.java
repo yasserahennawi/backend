@@ -10,6 +10,11 @@ public abstract class User {
         this.fbToken = fbToken;
     }
 
+    public void setFbToken(String fbToken) {
+        this.fbToken = fbToken;
+    }
+    
+
     public String getUserID() {
         return userID;
     }

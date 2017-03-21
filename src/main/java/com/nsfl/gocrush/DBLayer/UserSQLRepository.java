@@ -22,7 +22,7 @@ public class UserSQLRepository extends UserRepository {
     }
 
     @Override
-    public void addUser(NormalUser user) {
+    public NormalUser addUser(NormalUser user) {
         try {
             String userID = user.getUserID();
             String fbToken = user.getFbToken();
@@ -32,6 +32,23 @@ public class UserSQLRepository extends UserRepository {
         } catch (Exception e) {
             System.out.println(e);
         }
+
+        return user;
+    }
+
+    @Override
+    public NormalUser updateUser(NormalUser user) {
+        try {
+            String userID = user.getUserID();
+            String fbToken = user.getFbToken();
+            String query = "UPDATE user SET fbToken = '" + fbToken + "' WHERE userID = '" + userID + "';";
+            stat.executeUpdate(query);
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        return user;
     }
 
     @Override

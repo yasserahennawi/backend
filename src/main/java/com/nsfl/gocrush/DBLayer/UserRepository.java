@@ -5,7 +5,9 @@ import java.util.ArrayList;
 
 public abstract class UserRepository {
 
-    public abstract void addUser(NormalUser user);
+    public abstract NormalUser addUser(NormalUser user);
+    
+    public abstract NormalUser updateUser(NormalUser user);
 
     public abstract ArrayList<NormalUser> getUsers();
 
