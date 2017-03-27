@@ -1,6 +1,6 @@
 package com.nsfl.gocrush.DBLayer;
 
-import com.nsfl.gocrush.Utility.AppConfig;
+import com.nsfl.gocrush.Utility.SQLConfig;
 import com.nsfl.gocrush.ModelLayer.Crush;
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ public class CrushSQLRepository extends CrushRepository {
 
     public CrushSQLRepository() {
         try {
-            AppConfig config = AppConfig.getInstance();
+            SQLConfig config = SQLConfig.getInstance();
             System.out.println("Database connection established");
             stat = config.con.createStatement();
 
@@ -22,28 +22,37 @@ public class CrushSQLRepository extends CrushRepository {
     }
 
     @Override
-    public void addCrush(Crush crush) {
+    public Crush addCrush(Crush crush) {
         try {
-            String userID = crush.getUserID();
-            String crushID = crush.getCrushID();
-            String insert = "insert into crush(userID,crushID) values('" + userID + "','" + crushID + "')";
+
+            String insert = "INSERT INTO crush(userID,crushID) VALUES('" + crush.getUserID() + "','" + crush.getCrushID() + "')";
             stat.executeUpdate(insert);
         } catch (Exception e) {
             System.out.println(e);
         }
+        return crush;
+    }
+
+    public Crush deleteCrush(Crush crush) {
+        try {
+            String delete = "DELETE FROM crush WHERE userID = '" + crush.getUserID() + "' AND crushID = '" + crush.getCrushID() + "'";
+            stat.executeUpdate(delete);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return crush;
     }
 
     @Override
     public ArrayList<Crush> getCrushesByUserID(String id) {
         try {
-            String query = "select * from crush where userID='" + id + "'";
+            String query = "SELECT * FROM crush WHERE userID='" + id + "'";
             rs = stat.executeQuery(query);
             ArrayList<Crush> crushes = new ArrayList<>();
             while (rs.next()) {
                 String userID = rs.getString("userID");
                 String crushID = rs.getString("crushID");
                 Crush crush = new Crush(userID, crushID);
-                System.out.println(crush.getCrushID());
                 crushes.add(crush);
             }
             return crushes;
@@ -57,12 +66,13 @@ public class CrushSQLRepository extends CrushRepository {
     @Override
     public int getNumberOfCrushesByUserID(String id) {
         try {
-            String query = "select count(crushID) from crush where userID='" + id + "'";
+            String query = "SELECT COUNT(crushID) FROM crush WHERE userID='" + id + "'";
             rs = stat.executeQuery(query);
             while (rs.next()) {
+
                 int crushes = rs.getInt("count(crushID)");
-                System.out.println("Number of " + id + "'s " + "crushes= " + crushes);
                 return crushes;
+
             }
 
         } catch (Exception e) {
