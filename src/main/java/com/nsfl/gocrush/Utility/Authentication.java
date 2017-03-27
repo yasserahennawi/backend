@@ -7,23 +7,26 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.nsfl.gocrush.ApplicationLayer.Input.UserInput;
+import com.nsfl.gocrush.DBLayer.UserSQLRepository;
+import com.nsfl.gocrush.ModelLayer.NormalUser;
 import java.io.UnsupportedEncodingException;
 
 public class Authentication {
 
     private String secretKey;
+    private UserSQLRepository userSqlRepo;
 
-    public Authentication(String secretKey) {
+    public Authentication(String secretKey, UserSQLRepository userSqlRepo) {
         this.secretKey = secretKey;
+        this.userSqlRepo = userSqlRepo;
     }
 
-    public String getToken(UserInput userInput) throws UnsupportedEncodingException {
+    public String getJwtToken(String userID) throws UnsupportedEncodingException {
         String token = "";
         try {
             token = JWT.create()
                     .withIssuer("auth0")
-                    .withClaim("userID", userInput.getUserID())
+                    .withClaim("userID", userID)
                     .sign(Algorithm.HMAC256(this.secretKey));
         } catch (JWTCreationException exception) {
             //Invalid Signing configuration / Couldn't convert Claims.
@@ -31,7 +34,7 @@ public class Authentication {
         return "Bearer " + token;
     }
 
-    public boolean verifyToken(String token) throws UnsupportedEncodingException {
+    public boolean verifyJwtToken(String token) throws UnsupportedEncodingException {
         token = token.replace("Bearer ", "");
         try {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(this.secretKey))
@@ -45,13 +48,15 @@ public class Authentication {
         }
     }
 
-    public String getUserID(String token) throws UnsupportedEncodingException {
+    public NormalUser getUser(String jwtToken) throws UnsupportedEncodingException {
 
         try {
-            JWT jwt = JWT.decode(token);
-            return jwt.getClaim("userID").asString();
+            JWT jwt = JWT.decode(jwtToken);
+            String userID = jwt.getClaim("userID").asString();
+            return userSqlRepo.getUserById(userID);
+            
         } catch (JWTDecodeException exception) {
-            return "";
+            return null;
         }
 
     }

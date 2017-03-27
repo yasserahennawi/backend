@@ -13,16 +13,15 @@ import java.sql.SQLException;
  *
  * @author lenovo
  */
-public class AppConfig {
+public class SQLConfig {
 
     public Connection con;
-    private static AppConfig instance;
+    private static SQLConfig instance;
 
-    private AppConfig() {
+    private SQLConfig() {
         try {
-            System.out.println("1");
+
             Class.forName("com.mysql.jdbc.Driver");
-            System.out.println("2");
             con = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/gocrush", "root", "");
             if (con != null) {
@@ -36,10 +35,10 @@ public class AppConfig {
         }
     }
 
-    public static AppConfig getInstance() {
+    public static SQLConfig getInstance() {
         if (instance == null) {
 
-            instance = new AppConfig();
+            instance = new SQLConfig();
 
         }
 

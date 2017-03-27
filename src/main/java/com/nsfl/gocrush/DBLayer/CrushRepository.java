@@ -5,7 +5,9 @@ import java.util.ArrayList;
 
 public abstract class CrushRepository {
 
-    public abstract void addCrush(Crush crush);
+    public abstract Crush addCrush(Crush crush);
+    
+    public abstract Crush deleteCrush(Crush crush);
 
     public abstract ArrayList<Crush> getCrushesByUserID(String id);
 
