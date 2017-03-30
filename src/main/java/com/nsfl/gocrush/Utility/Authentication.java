@@ -21,41 +21,50 @@ public class Authentication {
         this.userSqlRepo = userSqlRepo;
     }
 
-    public String getJwtToken(String userID) throws UnsupportedEncodingException {
+    public String getJwtToken(String appUserID) throws UnsupportedEncodingException {
         String token = "";
         try {
             token = JWT.create()
                     .withIssuer("auth0")
-                    .withClaim("userID", userID)
+                    .withClaim("appUserID", appUserID)
                     .sign(Algorithm.HMAC256(this.secretKey));
         } catch (JWTCreationException exception) {
             //Invalid Signing configuration / Couldn't convert Claims.
         }
-        return "Bearer " + token;
+        return token;
     }
 
-    public boolean verifyJwtToken(String token) throws UnsupportedEncodingException {
-        token = token.replace("Bearer ", "");
-        try {
-            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(this.secretKey))
-                    .withIssuer("auth0")
-                    .build(); //Reusable verifier instance
-            DecodedJWT jwt = verifier.verify(token);
-            return true;
-        } catch (JWTVerificationException exception) {
-            //Invalid signature/claims
+    private boolean verifyJwtToken(String token) throws UnsupportedEncodingException {
+
+        if (token != null) {
+            token = token.replace("Bearer ", "");
+            try {
+                JWTVerifier verifier = JWT.require(Algorithm.HMAC256(this.secretKey))
+                        .withIssuer("auth0")
+                        .build(); //Reusable verifier instance
+                DecodedJWT jwt = verifier.verify(token);
+                return true;
+            } catch (JWTVerificationException exception) {
+                //Invalid signature/claims
+                return false;
+            }
+        } else {
             return false;
         }
     }
 
     public NormalUser getUser(String jwtToken) throws UnsupportedEncodingException {
 
-        try {
-            JWT jwt = JWT.decode(jwtToken);
-            String userID = jwt.getClaim("userID").asString();
-            return userSqlRepo.getUserById(userID);
-            
-        } catch (JWTDecodeException exception) {
+        if (this.verifyJwtToken(jwtToken)) {
+            try {
+                JWT jwt = JWT.decode(jwtToken);
+                String appUserID = jwt.getClaim("appUserID").asString();
+                return userSqlRepo.getUserByAppID(appUserID);
+
+            } catch (JWTDecodeException exception) {
+                return null;
+            }
+        } else {
             return null;
         }
 

@@ -7,10 +7,10 @@ public abstract class UserRepository {
 
     public abstract NormalUser addUser(NormalUser user);
     
-    public abstract NormalUser updateUser(NormalUser user);
+    public abstract NormalUser updateUserFbToken(NormalUser user);
 
     public abstract ArrayList<NormalUser> getUsers();
 
-    public abstract NormalUser getUserById(String id);
+    public abstract NormalUser getUserByAppID(String id);
 
 }

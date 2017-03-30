@@ -4,21 +4,21 @@ import java.util.Date;
 
 public class Crush {
 
-    private String userID;
-    private String crushID;
+    private String appUserID;
+    private String fbCrushID;
     private Date createdAtd;
 
-    public Crush(String userID, String crushID) {
-        this.userID = userID;
-        this.crushID = crushID;
+    public Crush(String appUserID, String fbCrushID) {
+        this.appUserID = appUserID;
+        this.fbCrushID = fbCrushID;
     }
 
-    public String getUserID() {
-        return userID;
+    public String getAppUserID() {
+        return appUserID;
     }
 
-    public String getCrushID() {
-        return crushID;
+    public String getfbCrushID() {
+        return fbCrushID;
     }
 
     public Date getCreatedAtd() {
