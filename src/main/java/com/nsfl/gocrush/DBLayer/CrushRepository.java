@@ -9,8 +9,10 @@ public abstract class CrushRepository {
     
     public abstract Crush deleteCrush(Crush crush);
 
-    public abstract ArrayList<Crush> getCrushesByUserID(String id);
+    public abstract ArrayList<Crush> getCrushesByUserAppID(String id);
 
-    public abstract int getNumberOfCrushesByUserID(String id);
+    public abstract int getNumberOfCrushesByUserAppID(String id);
+    
+    public abstract int getNumberOfCrushesOnUser(String id);
 
 }

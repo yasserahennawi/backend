@@ -2,11 +2,11 @@ package com.nsfl.gocrush.ModelLayer;
 
 public abstract class User {
 
-    private String userID;
+    private String appUserID;
     private String fbToken;
 
-    public User(String userID, String fbToken) {
-        this.userID = userID;
+    public User(String appUserID, String fbToken) {
+        this.appUserID = appUserID;
         this.fbToken = fbToken;
     }
 
@@ -15,8 +15,8 @@ public abstract class User {
     }
     
 
-    public String getUserID() {
-        return userID;
+    public String getAppUserID() {
+        return appUserID;
     }
 
     public String getFbToken() {

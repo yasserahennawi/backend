@@ -2,6 +2,7 @@ package com.nsfl.gocrush.Utility;
 
 import com.google.gson.Gson;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
+import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
@@ -24,9 +25,9 @@ public class FacebookConfig {
 
         this.gson = gson;
         this.httpRequest = httpRequest;
-        
+
     }
-    
+
     public String authenticate() {
         return "https://www.facebook.com/v2.8/dialog/oauth?client_id=" + this.appId + "&redirect_uri=" + this.domain + "&scope=" + this.scope + "&response_type=" + this.responseType;
     }
@@ -46,11 +47,15 @@ public class FacebookConfig {
 
     public String getUserData(NormalUser normalUser) {
         //TODO check if fbToken expired
-        FacebookClient facebookClient = new DefaultFacebookClient(normalUser.getFbToken(), Version.LATEST);
-        JsonObject picture = facebookClient.fetchObject("me/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
-        User user = facebookClient.fetchObject("me", User.class);
-        String userData = "{\"displayName\": \"" + user.getName() + "\", \"pictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\" }";
-        return userData;
+        try {
+            FacebookClient facebookClient = new DefaultFacebookClient(normalUser.getFbToken(), Version.LATEST);
+            JsonObject picture = facebookClient.fetchObject("me/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
+            User user = facebookClient.fetchObject("me", User.class);
+            String userData = "{\"displayName\": \"" + user.getName() + "\", \"pictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"appUserID\": \"" + user.getId()+ "\"}";
+            return userData;
+        } catch (Exception e) {
+            return null;
+        }
 
     }
 

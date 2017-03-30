@@ -13,14 +13,44 @@ import com.nsfl.gocrush.ModelLayer.NormalUser;
 import com.nsfl.gocrush.Utility.Authentication;
 import com.nsfl.gocrush.Utility.FacebookConfig;
 import com.nsfl.gocrush.Utility.HTTPRequest;
+import static spark.Spark.before;
 import static spark.Spark.delete;
 import static spark.Spark.get;
+import static spark.Spark.options;
 import static spark.Spark.post;
 
 public class Main {
 
+    private static void enableCORS(final String origin, final String methods, final String headers) {
+
+        options("/*", (request, response) -> {
+
+            String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
+            if (accessControlRequestHeaders != null) {
+                response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+            }
+
+            String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+            if (accessControlRequestMethod != null) {
+                response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+            }
+
+            return "OK";
+        });
+
+        before((request, response) -> {
+            response.header("Access-Control-Allow-Origin", origin);
+            response.header("Access-Control-Request-Method", methods);
+            response.header("Access-Control-Allow-Headers", headers);
+            // Note: this may or may not be necessary in your particular application
+            response.type("application/json");
+        });
+    }
+
     public static void main(String[] args) {
 
+        enableCORS("*", "*", "*");
+        
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         HTTPRequest httpRequest = new HTTPRequest();
         UserSQLRepository userSqlRepo = new UserSQLRepository();
@@ -30,7 +60,7 @@ public class Main {
         Authentication auth = new Authentication("secret", userSqlRepo);
         FacebookConfig facebookConfig = new FacebookConfig(httpRequest, gson);
         RegisterUser regUser = new RegisterUser(userSqlRepo, normalUserFactory);
-        RegisterCrush regCrush = new RegisterCrush(crushSqlRepo, crushFactory);
+        RegisterCrush regCrush = new RegisterCrush(userSqlRepo, crushSqlRepo, crushFactory);
 
         get("/", (req, res) -> {
 
@@ -41,17 +71,27 @@ public class Main {
         get("/api/users/session", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
 
-            if (jwtToken != null && auth.verifyJwtToken(jwtToken)) {
+            if (normalUser != null) {
+                String userData = facebookConfig.getUserData(normalUser);
 
-                res.type("application/json");
-                return facebookConfig.getUserData(auth.getUser(jwtToken));
+                if (userData != null) {
+
+                    res.type("application/json");
+                    return userData;
+
+                } else {
+
+                    res.redirect("http://localhost:4567/api/users/login");
+                    return null;
+
+                }
 
             } else {
-
                 return null;
-
             }
+
         });
 
         get("/api/users/login", (req, res) -> {
@@ -69,18 +109,41 @@ public class Main {
 
             NormalUser normalUser = regUser.registerUpdateUser(userID, fbToken);
 
-            res.redirect("http://localhost:4567?token=" + auth.getJwtToken(normalUser.getUserID()));
+            res.redirect("http://127.0.0.1:8080?token=" + auth.getJwtToken(normalUser.getAppUserID()));
             return null;
 
         });
 
-        get("/api/users/crushes/number", (req, res) -> {
+        get("/api/users/:appUserID/crushes/count", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
 
-            if (jwtToken != null && auth.verifyJwtToken(jwtToken)) {
+            if (normalUser != null) {
 
-                return crushSqlRepo.getNumberOfCrushesByUserID(auth.getUser(jwtToken).getUserID());
+                if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
+                    return crushSqlRepo.getNumberOfCrushesByUserAppID(normalUser.getAppUserID());
+                } else {
+                    return "401 Unauthorized";
+                }
+
+            } else {
+                return "401 Unauthorized";
+            }
+        });
+        get("/api/users/:appUserID/crushes", (req, res) -> {
+
+            String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
+
+            if (normalUser != null) {
+
+                if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
+                    res.type("application/json");
+                    return gson.toJson(crushSqlRepo.getCrushesByUserAppID(normalUser.getAppUserID()));
+                } else {
+                    return "401 Unauthorized";
+                }
 
             } else {
 
@@ -89,14 +152,20 @@ public class Main {
             }
         });
 
-        get("/api/users/crushes", (req, res) -> {
+        post("/api/users/:appUserID/crushes", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
 
-            if (jwtToken != null && auth.verifyJwtToken(jwtToken)) {
+            if (normalUser != null) {
 
-                res.type("application/json");
-                return gson.toJson(crushSqlRepo.getCrushesByUserID(auth.getUser(jwtToken).getUserID()));
+                if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
+                    String crushUrl = req.body();
+                    res.type("application/json");
+                    return gson.toJson(regCrush.register(normalUser, crushUrl));
+                } else {
+                    return "401 Unauthorized";
+                }
 
             } else {
 
@@ -105,31 +174,38 @@ public class Main {
             }
         });
 
-        post("/api/users/crushes", (req, res) -> {
+        get("/api/users/:appUserID/crushes-on-me-count", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
 
-            if (jwtToken != null && auth.verifyJwtToken(jwtToken)) {
+            if (normalUser != null) {
 
-                Crush crush = gson.fromJson(req.body(), Crush.class);
-                res.type("application/json");
-                return gson.toJson(regCrush.register(auth.getUser(jwtToken).getUserID(), crush.getCrushID()));
+                if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
+                    return crushSqlRepo.getNumberOfCrushesOnUser(normalUser.getAppUserID());
+                } else {
+                    return "401 Unauthorized";
+                }
 
             } else {
-
                 return "401 Unauthorized";
-
             }
+
         });
 
-        delete("/api/users/crushes/:crushID", (req, res) -> {
+        delete("/api/users/:appUserID/crushes/:fbCrushID", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
+            NormalUser normalUser = auth.getUser(jwtToken);
 
-            if (jwtToken != null && auth.verifyJwtToken(jwtToken)) {
+            if (normalUser != null) {
 
-                res.type("application/json");
-                return gson.toJson(crushSqlRepo.deleteCrush(new Crush(auth.getUser(jwtToken).getUserID(), req.params(":crushID"))));
+                if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
+                    res.type("application/json");
+                    return gson.toJson(crushSqlRepo.deleteCrush(new Crush(auth.getUser(jwtToken).getAppUserID(), req.params(":fbCrushID"))));
+                } else {
+                    return "401 Unauthorized";
+                }
 
             } else {
 

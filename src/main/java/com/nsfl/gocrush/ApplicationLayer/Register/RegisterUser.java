@@ -16,7 +16,7 @@ public class RegisterUser {
 
     public NormalUser registerUpdateUser(String userID, String fbToken) {
 
-        NormalUser normalUser = userSqlRepo.getUserById(userID);
+        NormalUser normalUser = userSqlRepo.getUserByAppID(userID);
         if (normalUser == null) {
 
             NormalUser newUser = normalUserFactory.create(userID, fbToken);
@@ -25,7 +25,7 @@ public class RegisterUser {
         } else {
 
             normalUser.setFbToken(fbToken);
-            return userSqlRepo.updateUser(normalUser);
+            return userSqlRepo.updateUserFbToken(normalUser);
 
         }
     }
