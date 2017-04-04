@@ -32,6 +32,7 @@ public class RegisterCrush {
             this.userSqlRepo.setUserFbUserID(normalUser);
             return this.crushSqlRepo.addCrush(crush);
         } catch (Exception e) {
+            //Throws errors for invalid urls (Invalid data input)
             System.out.println("Please Enter Valid URL!!");
             return null;
         }

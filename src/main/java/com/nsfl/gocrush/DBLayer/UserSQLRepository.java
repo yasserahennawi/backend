@@ -81,7 +81,8 @@ public class UserSQLRepository extends UserRepository {
         } catch (Exception e) {
             System.out.println(e);
         }
-        return null;
+        //return new ArrayList<>();
+       return null;
     }
 
     @Override

@@ -4,6 +4,9 @@ import com.nsfl.gocrush.DBLayer.CrushSQLRepository;
 import com.nsfl.gocrush.DBLayer.UserSQLRepository;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.nsfl.gocrush.ApplicationLayer.Error.AuthenticationError;
+import com.nsfl.gocrush.ApplicationLayer.Error.AuthorizationError;
+import com.nsfl.gocrush.ApplicationLayer.Error.ValidationError;
 import com.nsfl.gocrush.ApplicationLayer.Register.RegisterCrush;
 import com.nsfl.gocrush.ApplicationLayer.Register.RegisterUser;
 import com.nsfl.gocrush.ApplicationLayer.Factory.CrushFactory;
@@ -11,7 +14,7 @@ import com.nsfl.gocrush.ApplicationLayer.Factory.NormalUserFactory;
 import com.nsfl.gocrush.ModelLayer.Crush;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
 import com.nsfl.gocrush.Utility.Authentication;
-import com.nsfl.gocrush.Utility.FacebookConfig;
+import com.nsfl.gocrush.Utility.FacebookApi;
 import com.nsfl.gocrush.Utility.HTTPRequest;
 import static spark.Spark.before;
 import static spark.Spark.delete;
@@ -50,7 +53,9 @@ public class Main {
     public static void main(String[] args) {
 
         enableCORS("*", "*", "*");
-        
+
+        String backendServerUrl = "http://localhost:4567";
+        String fronendServerUrl = "http://127.0.0.1:8080";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         HTTPRequest httpRequest = new HTTPRequest();
         UserSQLRepository userSqlRepo = new UserSQLRepository();
@@ -58,7 +63,7 @@ public class Main {
         NormalUserFactory normalUserFactory = new NormalUserFactory();
         CrushFactory crushFactory = new CrushFactory();
         Authentication auth = new Authentication("secret", userSqlRepo);
-        FacebookConfig facebookConfig = new FacebookConfig(httpRequest, gson);
+        FacebookApi facebookApi = new FacebookApi(httpRequest, gson, backendServerUrl);
         RegisterUser regUser = new RegisterUser(userSqlRepo, normalUserFactory);
         RegisterCrush regCrush = new RegisterCrush(userSqlRepo, crushSqlRepo, crushFactory);
 
@@ -71,10 +76,10 @@ public class Main {
         get("/api/users/session", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
-                String userData = facebookConfig.getUserData(normalUser);
+                String userData = facebookApi.getUserData(normalUser);
 
                 if (userData != null) {
 
@@ -83,20 +88,23 @@ public class Main {
 
                 } else {
 
-                    res.redirect("http://localhost:4567/api/users/login");
+                    res.redirect(backendServerUrl + "/api/users/login");
                     return null;
 
                 }
 
             } else {
-                return null;
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
             }
 
         });
 
         get("/api/users/login", (req, res) -> {
 
-            res.redirect(facebookConfig.authenticate());
+            res.redirect(facebookApi.authenticate());
             return null;
 
         });
@@ -104,37 +112,42 @@ public class Main {
         get("/api/fb-redirect", (req, res) -> {
 
             String code = req.queryParams("code");
-            String fbToken = facebookConfig.getFbToken(code);
-            String userID = facebookConfig.getUserID(fbToken);
-
+            String fbToken = facebookApi.getFbToken(code);
+            String userID = facebookApi.getUserID(fbToken);
             NormalUser normalUser = regUser.registerUpdateUser(userID, fbToken);
-
-            res.redirect("http://127.0.0.1:8080?token=" + auth.getJwtToken(normalUser.getAppUserID()));
-            return null;
+            res.redirect(fronendServerUrl + "?token=" + auth.getJwtToken(normalUser.getAppUserID()));
+            res.status(204);
+            return "";
 
         });
 
         get("/api/users/:appUserID/crushes/count", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
 
                 if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
                     return crushSqlRepo.getNumberOfCrushesByUserAppID(normalUser.getAppUserID());
                 } else {
-                    return "401 Unauthorized";
+                    res.status(401);
+                    res.body(gson.toJson(new AuthorizationError()));
+                    res.type("application/json");
+                    return res.body();
                 }
 
             } else {
-                return "401 Unauthorized";
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
             }
         });
         get("/api/users/:appUserID/crushes", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
 
@@ -142,12 +155,18 @@ public class Main {
                     res.type("application/json");
                     return gson.toJson(crushSqlRepo.getCrushesByUserAppID(normalUser.getAppUserID()));
                 } else {
-                    return "401 Unauthorized";
+                    res.status(401);
+                    res.body(gson.toJson(new AuthorizationError()));
+                    res.type("application/json");
+                    return res.body();
                 }
 
             } else {
 
-                return "401 Unauthorized";
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
 
             }
         });
@@ -155,21 +174,37 @@ public class Main {
         post("/api/users/:appUserID/crushes", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
 
                 if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
                     String crushUrl = req.body();
-                    res.type("application/json");
-                    return gson.toJson(regCrush.register(normalUser, crushUrl));
+                    Crush crush = regCrush.register(normalUser, crushUrl);
+                    
+                    if (crush != null) {
+                        res.type("application/json");
+                        return gson.toJson(crush);
+                    } else {
+                        res.status(400);
+                        res.body(gson.toJson(new ValidationError()));
+                        res.type("application/json");
+                        return res.body();
+                    }
+
                 } else {
-                    return "401 Unauthorized";
+                    res.status(401);
+                    res.body(gson.toJson(new AuthorizationError()));
+                    res.type("application/json");
+                    return res.body();
                 }
 
             } else {
 
-                return "401 Unauthorized";
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
 
             }
         });
@@ -177,18 +212,24 @@ public class Main {
         get("/api/users/:appUserID/crushes-on-me-count", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
 
                 if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
                     return crushSqlRepo.getNumberOfCrushesOnUser(normalUser.getAppUserID());
                 } else {
-                    return "401 Unauthorized";
+                    res.status(401);
+                    res.body(gson.toJson(new AuthorizationError()));
+                    res.type("application/json");
+                    return res.body();
                 }
 
             } else {
-                return "401 Unauthorized";
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
             }
 
         });
@@ -196,20 +237,26 @@ public class Main {
         delete("/api/users/:appUserID/crushes/:fbCrushID", (req, res) -> {
 
             String jwtToken = req.headers("Authorization");
-            NormalUser normalUser = auth.getUser(jwtToken);
+            NormalUser normalUser = auth.verifyJwtToken(jwtToken);
 
             if (normalUser != null) {
 
                 if (normalUser.getAppUserID().equals(req.params(":appUserID"))) {
                     res.type("application/json");
-                    return gson.toJson(crushSqlRepo.deleteCrush(new Crush(auth.getUser(jwtToken).getAppUserID(), req.params(":fbCrushID"))));
+                    return gson.toJson(crushSqlRepo.deleteCrush(new Crush(auth.verifyJwtToken(jwtToken).getAppUserID(), req.params(":fbCrushID"))));
                 } else {
-                    return "401 Unauthorized";
+                    res.status(401);
+                    res.body(gson.toJson(new AuthorizationError()));
+                    res.type("application/json");
+                    return res.body();
                 }
 
             } else {
 
-                return "401 Unauthorized";
+                res.status(403);
+                res.body(gson.toJson(new AuthenticationError()));
+                res.type("application/json");
+                return res.body();
 
             }
         });
