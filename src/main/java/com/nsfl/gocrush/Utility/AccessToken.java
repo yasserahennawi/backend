@@ -3,24 +3,24 @@ package com.nsfl.gocrush.Utility;
 public class AccessToken {
 
     private String access_token;
-    private String token_type;
-    private String expires_in;
+    private String tokenType;
+    private String expiryDate;
 
-    public AccessToken(String access_token, String token_type, String expires_in) {
-        this.access_token = access_token;
-        this.token_type = token_type;
-        this.expires_in = expires_in;
+    public AccessToken(String accessToken, String tokenType, String expiryDate) {
+        this.access_token = accessToken;
+        this.tokenType = tokenType;
+        this.expiryDate = expiryDate;
     }
 
-    public String getAccess_token() {
+    public String getAccessToken() {
         return access_token;
     }
 
-    public String getToken_type() {
-        return token_type;
+    public String getTokenType() {
+        return tokenType;
     }
 
-    public String getExpires_in() {
-        return expires_in;
+    public String getExpiryDate() {
+        return expiryDate;
     }
 }

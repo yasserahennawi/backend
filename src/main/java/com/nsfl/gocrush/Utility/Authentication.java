@@ -34,7 +34,7 @@ public class Authentication {
         return token;
     }
 
-    private boolean verifyJwtToken(String token) throws UnsupportedEncodingException {
+    private boolean validateSignature(String token) throws UnsupportedEncodingException {
 
         if (token != null) {
             token = token.replace("Bearer ", "");
@@ -53,9 +53,9 @@ public class Authentication {
         }
     }
 
-    public NormalUser getUser(String jwtToken) throws UnsupportedEncodingException {
+    public NormalUser verifyJwtToken(String jwtToken) throws UnsupportedEncodingException {
 
-        if (this.verifyJwtToken(jwtToken)) {
+        if (this.validateSignature(jwtToken)) {
             try {
                 JWT jwt = JWT.decode(jwtToken);
                 String appUserID = jwt.getClaim("appUserID").asString();
@@ -65,6 +65,7 @@ public class Authentication {
                 return null;
             }
         } else {
+            //Authentication error
             return null;
         }
 

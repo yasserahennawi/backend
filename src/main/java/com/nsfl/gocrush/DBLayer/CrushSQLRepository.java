@@ -2,7 +2,6 @@ package com.nsfl.gocrush.DBLayer;
 
 import com.nsfl.gocrush.Utility.SQLConfig;
 import com.nsfl.gocrush.ModelLayer.Crush;
-import com.nsfl.gocrush.ModelLayer.NormalUser;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -61,6 +60,7 @@ public class CrushSQLRepository extends CrushRepository {
         } catch (Exception e) {
             System.out.println(e);
         }
+        //return new ArrayList<>();
         return null;
     }
 

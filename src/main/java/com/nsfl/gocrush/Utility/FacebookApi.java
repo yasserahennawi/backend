@@ -2,7 +2,6 @@ package com.nsfl.gocrush.Utility;
 
 import com.google.gson.Gson;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
-import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
@@ -10,10 +9,10 @@ import com.restfb.Version;
 import com.restfb.json.JsonObject;
 import com.restfb.types.User;
 
-public class FacebookConfig {
+public class FacebookApi {
 
     private String appId = "1358490720863885";
-    private String domain = "http://localhost:4567/api/fb-redirect";
+    private String domain;
     private String scope = "email";
     private String appSecret = "843b37358ee826856b240a40c9cc7e94";
     private String responseType = "code";
@@ -21,8 +20,9 @@ public class FacebookConfig {
     private HTTPRequest httpRequest;
     private Gson gson;
 
-    public FacebookConfig(HTTPRequest httpRequest, Gson gson) {
-
+    public FacebookApi(HTTPRequest httpRequest, Gson gson, String backendServerUrl) {
+        
+        this.domain = backendServerUrl + "/api/fb-redirect";
         this.gson = gson;
         this.httpRequest = httpRequest;
 
@@ -36,7 +36,7 @@ public class FacebookConfig {
         String accessTokenRequest = "https://graph.facebook.com/v2.8/oauth/access_token?client_id=" + this.appId + "&redirect_uri=" + this.domain + "&client_secret=" + this.appSecret + "&code=" + code;
         String resBody = httpRequest.sendGet(accessTokenRequest);
         AccessToken accessToken = gson.fromJson(resBody, AccessToken.class);
-        return accessToken.getAccess_token();
+        return accessToken.getAccessToken();
     }
 
     public String getUserID(String fbToken) {
@@ -46,7 +46,7 @@ public class FacebookConfig {
     }
 
     public String getUserData(NormalUser normalUser) {
-        //TODO check if fbToken expired
+
         try {
             FacebookClient facebookClient = new DefaultFacebookClient(normalUser.getFbToken(), Version.LATEST);
             JsonObject picture = facebookClient.fetchObject("me/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
@@ -54,6 +54,7 @@ public class FacebookConfig {
             String userData = "{\"displayName\": \"" + user.getName() + "\", \"pictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"appUserID\": \"" + user.getId()+ "\"}";
             return userData;
         } catch (Exception e) {
+            //Throws exception when token expired
             return null;
         }
 
