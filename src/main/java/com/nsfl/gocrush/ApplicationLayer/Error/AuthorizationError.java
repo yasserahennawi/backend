@@ -4,8 +4,8 @@ package com.nsfl.gocrush.ApplicationLayer.Error;
 
 public class AuthorizationError extends Error {
 
-    public AuthorizationError() {
-        super("Unauthorized to perform this action", "ID_NOT_JWT", "Unauthorized to perform this action");
+    public AuthorizationError(String message) {
+        super(message, "ID_NOT_JWT", "Unauthorized to perform this action");
     }
        
 }

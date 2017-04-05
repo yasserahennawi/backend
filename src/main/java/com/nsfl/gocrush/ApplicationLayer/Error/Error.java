@@ -1,6 +1,6 @@
 package com.nsfl.gocrush.ApplicationLayer.Error;
 
-public abstract class Error {
+public abstract class Error extends Throwable {
 
     private String message;
     private String code;

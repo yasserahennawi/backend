@@ -1,6 +1,8 @@
 package com.nsfl.gocrush.Utility;
 
 import com.google.gson.Gson;
+import com.nsfl.gocrush.ApplicationLayer.Error.FbError;
+import com.nsfl.gocrush.ModelLayer.Crush;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
@@ -8,6 +10,7 @@ import com.restfb.Parameter;
 import com.restfb.Version;
 import com.restfb.json.JsonObject;
 import com.restfb.types.User;
+import java.util.ArrayList;
 
 public class FacebookApi {
 
@@ -21,7 +24,7 @@ public class FacebookApi {
     private Gson gson;
 
     public FacebookApi(HTTPRequest httpRequest, Gson gson, String backendServerUrl) {
-        
+
         this.domain = backendServerUrl + "/api/fb-redirect";
         this.gson = gson;
         this.httpRequest = httpRequest;
@@ -45,19 +48,60 @@ public class FacebookApi {
         return user.getId();
     }
 
-    public String getUserData(NormalUser normalUser) {
+    public String getUserData(NormalUser normalUser) throws FbError {
 
         try {
             FacebookClient facebookClient = new DefaultFacebookClient(normalUser.getFbToken(), Version.LATEST);
             JsonObject picture = facebookClient.fetchObject("me/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
             User user = facebookClient.fetchObject("me", User.class);
-            String userData = "{\"displayName\": \"" + user.getName() + "\", \"pictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"appUserID\": \"" + user.getId()+ "\"}";
+            String userData = "{\"displayName\": \"" + user.getName() + "\", \"pictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"appUserID\": \"" + user.getId() + "\", \"fbUserID\": \"" + normalUser.getFbUserID() + "\"}";
             return userData;
         } catch (Exception e) {
             //Throws exception when token expired
-            return null;
+            throw new FbError(e.getMessage());
         }
 
     }
 
+    public String getCrushesData(ArrayList<Crush> crushes, String fbToken) throws FbError {
+        try {
+            String crushesData = "[";
+
+            FacebookClient facebookClient = new DefaultFacebookClient(fbToken, Version.LATEST);
+            for (Crush crush : crushes) {
+                JsonObject picture = facebookClient.fetchObject(crush.getfbCrushID() + "/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
+                User user = facebookClient.fetchObject(crush.getfbCrushID(), User.class);
+                crushesData = crushesData + "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\"}, ";
+            }
+            crushesData = crushesData.substring(0, crushesData.length() - 2);
+            return crushesData + " ]";
+        } catch (Exception e) {
+            throw new FbError(e.getMessage());
+        }
+    }
+
+    public String getCrushData(Crush crush, String fbToken) throws FbError {
+        try {
+            FacebookClient facebookClient = new DefaultFacebookClient(fbToken, Version.LATEST);
+            JsonObject picture = facebookClient.fetchObject(crush.getfbCrushID() + "/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
+            User user = facebookClient.fetchObject(crush.getfbCrushID(), User.class);
+            String crushData = "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\"}";
+            return crushData;
+        } catch (Exception e) {
+            throw new FbError(e.getMessage());
+        }
+
+    }
+
+    public boolean sameUser(NormalUser normalUser, String fbUserID) throws FbError {
+        try {
+            FacebookClient facebookClient = new DefaultFacebookClient(normalUser.getFbToken(), Version.LATEST);
+            JsonObject picture1 = facebookClient.fetchObject("me/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
+            JsonObject picture2 = facebookClient.fetchObject(fbUserID + "/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
+            return picture1.getJsonObject("data").getString("url").equals(picture2.getJsonObject("data").getString("url"));
+        } catch (Exception e) {
+            throw new FbError(e.getMessage());
+        }
+
+    }
 }

@@ -7,34 +7,33 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.nsfl.gocrush.DBLayer.UserSQLRepository;
-import com.nsfl.gocrush.ModelLayer.NormalUser;
+import com.nsfl.gocrush.ApplicationLayer.Error.AuthenticationError;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Authentication {
 
     private String secretKey;
-    private UserSQLRepository userSqlRepo;
 
-    public Authentication(String secretKey, UserSQLRepository userSqlRepo) {
+    public Authentication(String secretKey) {
         this.secretKey = secretKey;
-        this.userSqlRepo = userSqlRepo;
     }
 
-    public String getJwtToken(String appUserID) throws UnsupportedEncodingException {
-        String token = "";
+    public String getJwtToken(String appUserID) throws AuthenticationError {
+
         try {
-            token = JWT.create()
+            String token = JWT.create()
                     .withIssuer("auth0")
                     .withClaim("appUserID", appUserID)
                     .sign(Algorithm.HMAC256(this.secretKey));
-        } catch (JWTCreationException exception) {
-            //Invalid Signing configuration / Couldn't convert Claims.
+            return token;
+        } catch (JWTCreationException | IllegalArgumentException | UnsupportedEncodingException exception) {
+            throw new AuthenticationError(exception.getMessage());
         }
-        return token;
     }
 
-    private boolean validateSignature(String token) throws UnsupportedEncodingException {
+    public void verifyJwtToken(String token) throws AuthenticationError {
 
         if (token != null) {
             token = token.replace("Bearer ", "");
@@ -43,31 +42,24 @@ public class Authentication {
                         .withIssuer("auth0")
                         .build(); //Reusable verifier instance
                 DecodedJWT jwt = verifier.verify(token);
-                return true;
+
             } catch (JWTVerificationException exception) {
-                //Invalid signature/claims
-                return false;
+                throw new AuthenticationError("Invalid signature/claims");
+            } catch (IllegalArgumentException | UnsupportedEncodingException exception) {
+                throw new AuthenticationError(exception.getMessage());
             }
         } else {
-            return false;
+            throw new AuthenticationError("Token is null");
         }
     }
 
-    public NormalUser verifyJwtToken(String jwtToken) throws UnsupportedEncodingException {
+    public String getUserAppId(String jwtToken) throws AuthenticationError {
 
-        if (this.validateSignature(jwtToken)) {
-            try {
-                JWT jwt = JWT.decode(jwtToken);
-                String appUserID = jwt.getClaim("appUserID").asString();
-                return userSqlRepo.getUserByAppID(appUserID);
-
-            } catch (JWTDecodeException exception) {
-                return null;
-            }
-        } else {
-            //Authentication error
-            return null;
+        try {
+            JWT jwt = JWT.decode(jwtToken);
+            return jwt.getClaim("appUserID").asString();
+        } catch (JWTDecodeException exception) {
+            throw new AuthenticationError(exception.getMessage());
         }
-
     }
 }

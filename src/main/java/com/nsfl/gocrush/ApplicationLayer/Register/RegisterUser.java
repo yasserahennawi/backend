@@ -1,5 +1,6 @@
 package com.nsfl.gocrush.ApplicationLayer.Register;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
 import com.nsfl.gocrush.ApplicationLayer.Factory.NormalUserFactory;
 import com.nsfl.gocrush.DBLayer.UserSQLRepository;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
@@ -14,7 +15,7 @@ public class RegisterUser {
         this.normalUserFactory = normalUserFactory;
     }
 
-    public NormalUser registerUpdateUser(String userID, String fbToken) {
+    public NormalUser registerUpdateUser(String userID, String fbToken) throws DbError {
 
         NormalUser normalUser = userSqlRepo.getUserByAppID(userID);
         if (normalUser == null) {

@@ -1,5 +1,6 @@
 package com.nsfl.gocrush.DBLayer;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
 import com.nsfl.gocrush.Utility.SQLConfig;
 import com.nsfl.gocrush.ModelLayer.Crush;
 import java.sql.*;
@@ -22,23 +23,24 @@ public class CrushSQLRepository extends CrushRepository {
     }
 
     @Override
-    public Crush addCrush(Crush crush) {
+    public Crush addCrush(Crush crush) throws DbError {
         try {
 
             String insert = "INSERT INTO crush(appUserID,fbCrushID) VALUES('" + crush.getAppUserID() + "','" + crush.getfbCrushID() + "')";
             stat.executeUpdate(insert);
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return crush;
     }
 
-    public Crush deleteCrush(Crush crush) {
+    @Override
+    public Crush deleteCrush(Crush crush) throws DbError {
         try {
             String delete = "DELETE FROM crush WHERE appUserID = '" + crush.getAppUserID() + "' AND fbCrushID = '" + crush.getfbCrushID() + "'";
             stat.executeUpdate(delete);
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return crush;
     }
@@ -60,8 +62,7 @@ public class CrushSQLRepository extends CrushRepository {
         } catch (Exception e) {
             System.out.println(e);
         }
-        //return new ArrayList<>();
-        return null;
+        return new ArrayList<>();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.nsfl.gocrush.DBLayer;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
 import com.nsfl.gocrush.Utility.SQLConfig;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
 import java.sql.*;
@@ -22,14 +23,14 @@ public class UserSQLRepository extends UserRepository {
     }
 
     @Override
-    public NormalUser addUser(NormalUser user) {
+    public NormalUser addUser(NormalUser user) throws DbError {
         try {
 
             String insert = "INSERT INTO user(appUserID,fbToken) VALUES('" + user.getAppUserID() + "','" + user.getFbToken() + "')";
             stat.executeUpdate(insert);
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
 
         return user;
@@ -71,8 +72,9 @@ public class UserSQLRepository extends UserRepository {
             while (rs.next()) {
 
                 String appUserID = rs.getString("appUserID");
+                String fbUserID = rs.getString("fbUserID");
                 String fbToken = rs.getString("fbToken");
-                NormalUser user = new NormalUser(appUserID, fbToken);
+                NormalUser user = new NormalUser(appUserID, fbUserID, fbToken);
                 users.add(user);
 
             }
@@ -81,22 +83,22 @@ public class UserSQLRepository extends UserRepository {
         } catch (Exception e) {
             System.out.println(e);
         }
-        //return new ArrayList<>();
-       return null;
+        return new ArrayList<>();
     }
 
     @Override
     public NormalUser getUserByAppID(String id) {
         try {
 
-            String query = "SELECT appUserID,fbToken FROM user WHERE appUserID ='" + id + "'";
+            String query = "SELECT * FROM user WHERE appUserID ='" + id + "'";
             rs = stat.executeQuery(query);
 
             while (rs.next()) {
 
                 String appUserID = rs.getString("appUserID");
+                 String fbUserID = rs.getString("fbUserID");
                 String fbToken = rs.getString("fbToken");
-                return new NormalUser(appUserID, fbToken);
+                return new NormalUser(appUserID, fbUserID, fbToken);
 
             }
         } catch (Exception e) {

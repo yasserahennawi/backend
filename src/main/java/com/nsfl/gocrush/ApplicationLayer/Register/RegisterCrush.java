@@ -1,24 +1,30 @@
 package com.nsfl.gocrush.ApplicationLayer.Register;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
+import com.nsfl.gocrush.ApplicationLayer.Error.FbError;
+import com.nsfl.gocrush.ApplicationLayer.Error.ValidationError;
 import com.nsfl.gocrush.ApplicationLayer.Factory.CrushFactory;
 import com.nsfl.gocrush.DBLayer.CrushSQLRepository;
 import com.nsfl.gocrush.DBLayer.UserSQLRepository;
 import com.nsfl.gocrush.ModelLayer.Crush;
 import com.nsfl.gocrush.ModelLayer.NormalUser;
+import com.nsfl.gocrush.Utility.FacebookApi;
 
 public class RegisterCrush {
 
     private CrushSQLRepository crushSqlRepo;
     private UserSQLRepository userSqlRepo;
     private CrushFactory crushFactory;
+    private FacebookApi facebookApi;
 
-    public RegisterCrush(UserSQLRepository userSqlRepo, CrushSQLRepository crushSqlRepo, CrushFactory crushFactory) {
+    public RegisterCrush(UserSQLRepository userSqlRepo, CrushSQLRepository crushSqlRepo, CrushFactory crushFactory, FacebookApi facebookApi) {
         this.userSqlRepo = userSqlRepo;
         this.crushSqlRepo = crushSqlRepo;
         this.crushFactory = crushFactory;
+        this.facebookApi = facebookApi;
     }
 
-    public Crush register(NormalUser normalUser, String crushUrl) {
+    public String register(NormalUser normalUser, String crushUrl) throws ValidationError, DbError {
 
         try {
             int index1 = crushUrl.indexOf("lst=") + 4;
@@ -28,15 +34,21 @@ public class RegisterCrush {
             String fbUserID = crushUrl.substring(index1, index2);
             String fbCrushID = crushUrl.substring(index3, index4);
             Crush crush = this.crushFactory.create(normalUser.getAppUserID(), fbCrushID);
-            normalUser.setFbUserID(fbUserID);
-            this.userSqlRepo.setUserFbUserID(normalUser);
-            return this.crushSqlRepo.addCrush(crush);
-        } catch (Exception e) {
+            if (normalUser.getFbUserID() == null) {
+                if (facebookApi.sameUser(normalUser, fbUserID)) {
+                    normalUser.setFbUserID(fbUserID);
+                    this.userSqlRepo.setUserFbUserID(normalUser);
+                } else {
+                    throw new ValidationError("Invalid url");
+                }
+            }
+            String crushjson = facebookApi.getCrushData(crush, normalUser.getFbToken());
+            this.crushSqlRepo.addCrush(crush);
+            return crushjson;
+        } catch (Exception | FbError e) {
             //Throws errors for invalid urls (Invalid data input)
-            System.out.println("Please Enter Valid URL!!");
-            return null;
+            throw new ValidationError("Invalid url");
         }
-
     }
 
 }
