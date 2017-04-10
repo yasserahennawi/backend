@@ -33,7 +33,7 @@ public class RegisterCrush {
             int index4 = crushUrl.indexOf("%3A", index3);
             String fbUserID = crushUrl.substring(index1, index2);
             String fbCrushID = crushUrl.substring(index3, index4);
-            Crush crush = this.crushFactory.create(normalUser.getAppUserID(), fbCrushID);
+
             if (normalUser.getFbUserID() == null) {
                 if (facebookApi.sameUser(normalUser, fbUserID)) {
                     normalUser.setFbUserID(fbUserID);
@@ -42,11 +42,14 @@ public class RegisterCrush {
                     throw new ValidationError("Invalid url");
                 }
             }
+            
+            Crush crush = this.crushFactory.create(normalUser.getAppUserID(), fbCrushID);
             String crushjson = facebookApi.getCrushData(crush, normalUser.getFbToken());
             this.crushSqlRepo.addCrush(crush);
             return crushjson;
+            
         } catch (Exception | FbError e) {
-            //Throws errors for invalid urls (Invalid data input)
+           
             throw new ValidationError("Invalid url");
         }
     }

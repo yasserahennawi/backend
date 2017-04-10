@@ -7,11 +7,11 @@ import java.util.ArrayList;
 public abstract class UserRepository {
 
     public abstract NormalUser addUser(NormalUser user) throws DbError;
-    
-    public abstract NormalUser updateUserFbToken(NormalUser user);
 
-    public abstract ArrayList<NormalUser> getUsers();
+    public abstract NormalUser updateUserFbToken(NormalUser user) throws DbError;
 
-    public abstract NormalUser getUserByAppID(String id);
+    public abstract ArrayList<NormalUser> getUsers() throws DbError;
+
+    public abstract NormalUser getUserByAppID(String id) throws DbError;
 
 }

@@ -5,6 +5,7 @@
  */
 package com.nsfl.gocrush.Utility;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -18,7 +19,7 @@ public class SQLConfig {
     public Connection con;
     private static SQLConfig instance;
 
-    private SQLConfig() {
+    private SQLConfig() throws DbError{
         try {
 
             Class.forName("com.mysql.jdbc.Driver");
@@ -30,12 +31,12 @@ public class SQLConfig {
 
         } catch (SQLException | ClassNotFoundException e) {
             System.out.println("Not connected");
-            System.err.println(e.getMessage());
+            throw new DbError(e.getMessage());
 
         }
     }
 
-    public static SQLConfig getInstance() {
+    public static SQLConfig getInstance() throws DbError {
         if (instance == null) {
 
             instance = new SQLConfig();

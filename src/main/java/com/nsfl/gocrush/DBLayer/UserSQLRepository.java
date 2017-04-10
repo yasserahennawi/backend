@@ -11,14 +11,14 @@ public class UserSQLRepository extends UserRepository {
     private Statement stat;
     private ResultSet rs;
 
-    public UserSQLRepository() {
+    public UserSQLRepository()  {
         try {
             SQLConfig config = SQLConfig.getInstance();
             System.out.println("Database connection established");
             stat = config.con.createStatement();
 
-        } catch (Exception e) {
-            System.out.println(e);
+        } catch (Exception | DbError e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -37,34 +37,34 @@ public class UserSQLRepository extends UserRepository {
     }
 
     @Override
-    public NormalUser updateUserFbToken(NormalUser user) {
+    public NormalUser updateUserFbToken(NormalUser user) throws DbError {
         try {
 
             String query = "UPDATE user SET fbToken = '" + user.getFbToken() + "' WHERE appUserID = '" + user.getAppUserID() + "';";
             stat.executeUpdate(query);
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
 
         return user;
     }
 
-    public NormalUser setUserFbUserID(NormalUser user) {
+    public NormalUser setUserFbUserID(NormalUser user) throws DbError {
         try {
 
             String query = "UPDATE user SET fbUserID = '" + user.getFbUserID() + "' WHERE appUserID = '" + user.getAppUserID() + "';";
             stat.executeUpdate(query);
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
 
         return user;
     }
 
     @Override
-    public ArrayList<NormalUser> getUsers() {
+    public ArrayList<NormalUser> getUsers() throws DbError {
         try {
             String query = "SELECT * FROM user";
             rs = stat.executeQuery(query);
@@ -81,13 +81,13 @@ public class UserSQLRepository extends UserRepository {
             return users;
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
-        return new ArrayList<>();
+
     }
 
     @Override
-    public NormalUser getUserByAppID(String id) {
+    public NormalUser getUserByAppID(String id) throws DbError {
         try {
 
             String query = "SELECT * FROM user WHERE appUserID ='" + id + "'";
@@ -96,13 +96,13 @@ public class UserSQLRepository extends UserRepository {
             while (rs.next()) {
 
                 String appUserID = rs.getString("appUserID");
-                 String fbUserID = rs.getString("fbUserID");
+                String fbUserID = rs.getString("fbUserID");
                 String fbToken = rs.getString("fbToken");
                 return new NormalUser(appUserID, fbUserID, fbToken);
 
             }
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
 
         return null;

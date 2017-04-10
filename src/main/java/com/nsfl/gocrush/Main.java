@@ -32,7 +32,6 @@ public class Main {
     public static void main(String[] args) {
 
         enableCORS("*", "*", "*");
-
         String backendServerUrl = "http://localhost:4567";
         String fronendServerUrl = "http://127.0.0.1:8080";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -76,65 +75,84 @@ public class Main {
 
         path("/api/users", () -> {
 
-            before(
-                    "/session", (req, res) -> {
+            before("/session", (req, res) -> {
+                
+                if (!req.requestMethod().equals("OPTIONS")) {
+                    try {
 
-                        try {
-                            String jwtToken = req.headers("Authorization");
-                            auth.verifyJwtToken(jwtToken);
-                            String appUserID = auth.getUserAppId(jwtToken);
-                            req.attribute("appUserID", appUserID);
-                        } catch (AuthenticationError e) {
-                            halt(403, gson.toJson(e));
-                        }
+                        
+                        String jwtToken = req.headers("Authorization");
+                        auth.verifyJwtToken(jwtToken);
+                        String appUserID = auth.getUserAppId(jwtToken);
+                        req.attribute("appUserID", appUserID);
+                    } catch (AuthenticationError e) {
+                        halt(403, gson.toJson(e));
                     }
+
+                }
+            }
             );
 
-            before(
-                    "/:appUserID/*", (req, res) -> {
-                        try {
-                            String jwtToken = req.headers("Authorization");
-                            auth.verifyJwtToken(jwtToken);
-                            String appUserID = auth.getUserAppId(jwtToken);
-                            if (!appUserID.equals(req.params(":appUserID"))) {
-                                AuthorizationError e = new AuthorizationError("This user unauthorized to this action");
-                                halt(401, gson.toJson(e));
-                            } else {
-                                req.attribute("appUserID", appUserID);
-                            }
-                        } catch (AuthenticationError e) {
-                            halt(403, gson.toJson(e));
+            before("/:appUserID/*", (req, res) -> {
+                
+                if (!req.requestMethod().equals("OPTIONS")) {
+                    try {
+                        String jwtToken = req.headers("Authorization");
+                        auth.verifyJwtToken(jwtToken);
+                        String appUserID = auth.getUserAppId(jwtToken);
+                        if (!appUserID.equals(req.params(":appUserID"))) {
+                            AuthorizationError e = new AuthorizationError("This user unauthorized to this action");
+                            halt(401, gson.toJson(e));
+                        } else {
+                            req.attribute("appUserID", appUserID);
                         }
-
+                    } catch (AuthenticationError e) {
+                        halt(403, gson.toJson(e));
                     }
+
+                }
+            }
             );
 
             get("/session", (req, res) -> {
-                NormalUser normalUser = userSqlRepo.getUserByAppID(req.attribute("appUserID"));
+
                 try {
+                    
+                    NormalUser normalUser = userSqlRepo.getUserByAppID(req.attribute("appUserID"));
                     String userData = facebookApi.getUserData(normalUser);
                     res.type("application/json");
                     return userData;
-                } catch (FbError e) {
+                } catch (FbError | DbError e) {
                     res.redirect(backendServerUrl + "/api/login");
                     return null;
                 }
             });
 
             get("/:appUserID/crushes-on-me-count", (req, res) -> {
-                return crushSqlRepo.getNumberOfCrushesOnUser(req.attribute("appUserID"));
+                try {
+                    return crushSqlRepo.getNumberOfCrushesOnUser(req.attribute("appUserID"));
+                } catch (DbError e) {
+                    res.status(400);
+                    res.body(gson.toJson(e));
+                    res.type("application/json");
+                    return res.body();
+                }
+
             });
 
             path("/:appUserID/crushes", () -> {
 
                 get("", (req, res) -> {
-                    ArrayList<Crush> crushes = crushSqlRepo.getCrushesByUserAppID(req.attribute("appUserID"));
+
                     try {
+                        ArrayList<Crush> crushes = crushSqlRepo.getCrushesByUserAppID(req.attribute("appUserID"));
                         res.type("application/json");
                         return facebookApi.getCrushesData(crushes, userSqlRepo.getUserByAppID(req.attribute("appUserID")).getFbToken());
-                    } catch (FbError e) {
+                    } catch (DbError | FbError e) {
+                        res.status(400);
+                        res.body(gson.toJson(e));
                         res.type("application/json");
-                        return gson.toJson(crushes);
+                        return res.body();
                     }
 
                 });
@@ -169,12 +187,20 @@ public class Main {
                 });
 
                 get("/count", (req, res) -> {
-                    return crushSqlRepo.getNumberOfCrushesByUserAppID(req.attribute("appUserID"));
+                    try {
+                        return crushSqlRepo.getNumberOfCrushesByUserAppID(req.attribute("appUserID"));
+                    } catch (DbError e) {
+                        res.status(400);
+                        res.body(gson.toJson(e));
+                        res.type("application/json");
+                        return res.body();
+                    }
                 });
 
             });
 
-        });
+        }
+        );
 
     }
 
@@ -185,17 +211,20 @@ public class Main {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
                 response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+                
             }
 
             String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
             if (accessControlRequestMethod != null) {
                 response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+                
             }
 
             return "OK";
         });
 
         before((request, response) -> {
+            
             response.header("Access-Control-Allow-Origin", origin);
             response.header("Access-Control-Request-Method", methods);
             response.header("Access-Control-Allow-Headers", headers);

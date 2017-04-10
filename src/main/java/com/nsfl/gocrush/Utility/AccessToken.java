@@ -3,13 +3,13 @@ package com.nsfl.gocrush.Utility;
 public class AccessToken {
 
     private String access_token;
-    private String tokenType;
-    private String expiryDate;
+    private String token_type;
+    private String expiry_in;
 
     public AccessToken(String accessToken, String tokenType, String expiryDate) {
         this.access_token = accessToken;
-        this.tokenType = tokenType;
-        this.expiryDate = expiryDate;
+        this.token_type = tokenType;
+        this.expiry_in = expiryDate;
     }
 
     public String getAccessToken() {
@@ -17,10 +17,10 @@ public class AccessToken {
     }
 
     public String getTokenType() {
-        return tokenType;
+        return token_type;
     }
 
     public String getExpiryDate() {
-        return expiryDate;
+        return expiry_in;
     }
 }

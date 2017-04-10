@@ -17,8 +17,8 @@ public class CrushSQLRepository extends CrushRepository {
             System.out.println("Database connection established");
             stat = config.con.createStatement();
 
-        } catch (Exception e) {
-            System.out.println(e);
+        } catch (Exception | DbError e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -46,7 +46,7 @@ public class CrushSQLRepository extends CrushRepository {
     }
 
     @Override
-    public ArrayList<Crush> getCrushesByUserAppID(String id) {
+    public ArrayList<Crush> getCrushesByUserAppID(String id) throws DbError {
         try {
             String query = "SELECT * FROM crush WHERE appUserID='" + id + "'";
             rs = stat.executeQuery(query);
@@ -60,13 +60,13 @@ public class CrushSQLRepository extends CrushRepository {
             return crushes;
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
-        return new ArrayList<>();
+
     }
 
     @Override
-    public int getNumberOfCrushesByUserAppID(String id) {
+    public int getNumberOfCrushesByUserAppID(String id) throws DbError {
         try {
             String query = "SELECT COUNT(fbCrushID) FROM crush WHERE appUserID='" + id + "'";
             rs = stat.executeQuery(query);
@@ -78,13 +78,13 @@ public class CrushSQLRepository extends CrushRepository {
             }
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return 0;
     }
 
     @Override
-    public int getNumberOfCrushesOnUser(String appUserID) {
+    public int getNumberOfCrushesOnUser(String appUserID) throws DbError {
         try {
             String query = "SELECT COUNT(*) FROM crush WHERE fbCrushID IN (SELECT fbUserID FROM user WHERE appUserID = '" + appUserID + "')";
             rs = stat.executeQuery(query);
@@ -96,7 +96,7 @@ public class CrushSQLRepository extends CrushRepository {
             }
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return 0;
     }

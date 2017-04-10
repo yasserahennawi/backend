@@ -9,8 +9,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.nsfl.gocrush.ApplicationLayer.Error.AuthenticationError;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 public class Authentication {
 
