@@ -1,5 +1,6 @@
 package com.nsfl.gocrush.DBLayer;
 
+import com.nsfl.gocrush.ApplicationLayer.Error.DbError;
 import com.nsfl.gocrush.Utility.SQLConfig;
 import com.nsfl.gocrush.ModelLayer.Crush;
 import java.sql.*;
@@ -16,35 +17,36 @@ public class CrushSQLRepository extends CrushRepository {
             System.out.println("Database connection established");
             stat = config.con.createStatement();
 
-        } catch (Exception e) {
-            System.out.println(e);
+        } catch (Exception | DbError e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
-    public Crush addCrush(Crush crush) {
+    public Crush addCrush(Crush crush) throws DbError {
         try {
 
             String insert = "INSERT INTO crush(appUserID,fbCrushID) VALUES('" + crush.getAppUserID() + "','" + crush.getfbCrushID() + "')";
             stat.executeUpdate(insert);
         } catch (Exception e) {
-            System.out.println(e);
-        }
-        return crush;
-    }
-
-    public Crush deleteCrush(Crush crush) {
-        try {
-            String delete = "DELETE FROM crush WHERE appUserID = '" + crush.getAppUserID() + "' AND fbCrushID = '" + crush.getfbCrushID() + "'";
-            stat.executeUpdate(delete);
-        } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return crush;
     }
 
     @Override
-    public ArrayList<Crush> getCrushesByUserAppID(String id) {
+    public Crush deleteCrush(Crush crush) throws DbError {
+        try {
+            String delete = "DELETE FROM crush WHERE appUserID = '" + crush.getAppUserID() + "' AND fbCrushID = '" + crush.getfbCrushID() + "'";
+            stat.executeUpdate(delete);
+        } catch (Exception e) {
+            throw new DbError(e.getMessage());
+        }
+        return crush;
+    }
+
+    @Override
+    public ArrayList<Crush> getCrushesByUserAppID(String id) throws DbError {
         try {
             String query = "SELECT * FROM crush WHERE appUserID='" + id + "'";
             rs = stat.executeQuery(query);
@@ -58,14 +60,13 @@ public class CrushSQLRepository extends CrushRepository {
             return crushes;
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
-        //return new ArrayList<>();
-        return null;
+
     }
 
     @Override
-    public int getNumberOfCrushesByUserAppID(String id) {
+    public int getNumberOfCrushesByUserAppID(String id) throws DbError {
         try {
             String query = "SELECT COUNT(fbCrushID) FROM crush WHERE appUserID='" + id + "'";
             rs = stat.executeQuery(query);
@@ -77,13 +78,13 @@ public class CrushSQLRepository extends CrushRepository {
             }
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return 0;
     }
 
     @Override
-    public int getNumberOfCrushesOnUser(String appUserID) {
+    public int getNumberOfCrushesOnUser(String appUserID) throws DbError {
         try {
             String query = "SELECT COUNT(*) FROM crush WHERE fbCrushID IN (SELECT fbUserID FROM user WHERE appUserID = '" + appUserID + "')";
             rs = stat.executeQuery(query);
@@ -95,7 +96,7 @@ public class CrushSQLRepository extends CrushRepository {
             }
 
         } catch (Exception e) {
-            System.out.println(e);
+            throw new DbError(e.getMessage());
         }
         return 0;
     }
