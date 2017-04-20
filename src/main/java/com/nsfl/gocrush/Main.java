@@ -33,7 +33,7 @@ public class Main {
 
         enableCORS("*", "*", "*");
         String backendServerUrl = "http://localhost:4567";
-        String fronendServerUrl = "http://127.0.0.1:8080";
+        String fronendServerUrl = "http://127.0.0.1:1111";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         HTTPRequest httpRequest = new HTTPRequest();
         UserSQLRepository userSqlRepo = new UserSQLRepository();
