@@ -6,11 +6,17 @@ public class Crush {
 
     private String appUserID;
     private String fbCrushID;
-    private Date createdAtd;
+    private Date createdAt;
 
     public Crush(String appUserID, String fbCrushID) {
         this.appUserID = appUserID;
         this.fbCrushID = fbCrushID;
+    }
+    
+    public Crush(String appUserID, String fbCrushID, Date createdAtd) {
+        this.appUserID = appUserID;
+        this.fbCrushID = fbCrushID;
+        this.createdAt = createdAtd;
     }
 
     public String getAppUserID() {
@@ -21,8 +27,8 @@ public class Crush {
         return fbCrushID;
     }
 
-    public Date getCreatedAtd() {
-        return createdAtd;
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
 }

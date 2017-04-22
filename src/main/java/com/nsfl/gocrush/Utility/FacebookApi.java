@@ -10,7 +10,11 @@ import com.restfb.Parameter;
 import com.restfb.Version;
 import com.restfb.json.JsonObject;
 import com.restfb.types.User;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class FacebookApi {
 
@@ -71,9 +75,11 @@ public class FacebookApi {
             for (Crush crush : crushes) {
                 JsonObject picture = facebookClient.fetchObject(crush.getfbCrushID() + "/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
                 User user = facebookClient.fetchObject(crush.getfbCrushID(), User.class);
-                crushesData = crushesData + "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\"}, ";
+                crushesData = crushesData + "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"createdAt\": \"" + getIsoDate(crush.getCreatedAt()) + "\"}, ";
             }
-            crushesData = crushesData.substring(0, crushesData.length() - 2);
+            if (crushes.size() >= 1) {
+                crushesData = crushesData.substring(0, crushesData.length() - 2);
+            }
             return crushesData + " ]";
         } catch (Exception e) {
             throw new FbError(e.getMessage());
@@ -85,7 +91,7 @@ public class FacebookApi {
             FacebookClient facebookClient = new DefaultFacebookClient(fbToken, Version.LATEST);
             JsonObject picture = facebookClient.fetchObject(crush.getfbCrushID() + "/picture", JsonObject.class, Parameter.with("height", "500"), Parameter.with("width", "500"), Parameter.with("redirect", "false"));
             User user = facebookClient.fetchObject(crush.getfbCrushID(), User.class);
-            String crushData = "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\"}";
+            String crushData = "{\"appUserID\": \"" + crush.getAppUserID() + "\", \"fbCrushID\": \"" + crush.getfbCrushID() + "\", \"crushDisplayName\": \"" + user.getName() + "\", \"crushPictureUrl\": \"" + picture.getJsonObject("data").getString("url") + "\", \"createdAt\": \"" + getIsoDate(new Date()) + "\"}";
             return crushData;
         } catch (Exception e) {
             throw new FbError(e.getMessage());
@@ -103,5 +109,12 @@ public class FacebookApi {
             throw new FbError(e.getMessage());
         }
 
+    }
+
+    private String getIsoDate(Date date) {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        df.setTimeZone(tz);
+        return df.format(date);
     }
 }

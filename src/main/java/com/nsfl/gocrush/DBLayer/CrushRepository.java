@@ -6,6 +6,8 @@ import java.util.ArrayList;
 
 public abstract class CrushRepository {
 
+    public abstract Crush getCrush(Crush crush) throws DbError;
+
     public abstract Crush addCrush(Crush crush) throws DbError;
 
     public abstract Crush deleteCrush(Crush crush) throws DbError;

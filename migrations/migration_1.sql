@@ -10,6 +10,7 @@ CREATE TABLE user (
 CREATE TABLE crush (
 	appUserID varchar(255) ,
 	fbCrushID varchar(255),
+	createdAt datetime DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (appUserID, fbCrushID),
 	FOREIGN KEY (appUserID) REFERENCES user(appUserID)
 );

@@ -19,6 +19,7 @@ import com.nsfl.gocrush.Utility.Authentication;
 import com.nsfl.gocrush.Utility.FacebookApi;
 import com.nsfl.gocrush.Utility.HTTPRequest;
 import java.util.ArrayList;
+import java.util.Date;
 import static spark.Spark.before;
 import static spark.Spark.delete;
 import static spark.Spark.get;
@@ -76,11 +77,10 @@ public class Main {
         path("/api/users", () -> {
 
             before("/session", (req, res) -> {
-                
+
                 if (!req.requestMethod().equals("OPTIONS")) {
                     try {
 
-                        
                         String jwtToken = req.headers("Authorization");
                         auth.verifyJwtToken(jwtToken);
                         String appUserID = auth.getUserAppId(jwtToken);
@@ -94,7 +94,7 @@ public class Main {
             );
 
             before("/:appUserID/*", (req, res) -> {
-                
+
                 if (!req.requestMethod().equals("OPTIONS")) {
                     try {
                         String jwtToken = req.headers("Authorization");
@@ -117,7 +117,7 @@ public class Main {
             get("/session", (req, res) -> {
 
                 try {
-                    
+
                     NormalUser normalUser = userSqlRepo.getUserByAppID(req.attribute("appUserID"));
                     String userData = facebookApi.getUserData(normalUser);
                     res.type("application/json");
@@ -175,8 +175,18 @@ public class Main {
 
                 delete("/:fbCrushID", (req, res) -> {
                     try {
-                        res.type("application/json");
-                        return gson.toJson(crushSqlRepo.deleteCrush(new Crush(req.attribute("appUserID"), req.params(":fbCrushID"))));
+
+                        Crush crush = new Crush(req.attribute("appUserID"), req.params(":fbCrushID"));
+                        Crush savedCrush = crushSqlRepo.getCrush(crush);
+                        if (savedCrush == null) {
+                            throw new DbError("Crush not found");
+                        }
+                        if (new Date().getTime() >= savedCrush.getCreatedAt().getTime() + 172800000 || new Date().getTime() <= savedCrush.getCreatedAt().getTime() + 3600000) {
+                            res.type("application/json");
+                            return gson.toJson(crushSqlRepo.deleteCrush(crush));
+                        } else {
+                            throw new DbError("You can delete this crush on " + new Date(savedCrush.getCreatedAt().getTime() + 172800000));
+                        }
                     } catch (DbError e) {
                         res.status(400);
                         res.body(gson.toJson(e));
@@ -211,20 +221,20 @@ public class Main {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
                 response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
-                
+
             }
 
             String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
             if (accessControlRequestMethod != null) {
                 response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
-                
+
             }
 
             return "OK";
         });
 
         before((request, response) -> {
-            
+
             response.header("Access-Control-Allow-Origin", origin);
             response.header("Access-Control-Request-Method", methods);
             response.header("Access-Control-Allow-Headers", headers);

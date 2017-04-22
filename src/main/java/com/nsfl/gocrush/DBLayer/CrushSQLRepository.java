@@ -35,6 +35,26 @@ public class CrushSQLRepository extends CrushRepository {
     }
 
     @Override
+    public Crush getCrush(Crush crush) throws DbError {
+        try {
+            String query = "SELECT * FROM crush WHERE appUserID = '" + crush.getAppUserID() + "' AND fbCrushID = '" + crush.getfbCrushID() + "'";
+            rs = stat.executeQuery(query);
+
+            while (rs.next()) {
+
+                String appUserID = rs.getString("appUserID");
+                String fbCrushID = rs.getString("fbCrushID");
+                Timestamp timestamp = rs.getTimestamp("createdAt");
+                return new Crush(appUserID, fbCrushID, timestamp);
+
+            }
+        } catch (Exception e) {
+            throw new DbError(e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
     public Crush deleteCrush(Crush crush) throws DbError {
         try {
             String delete = "DELETE FROM crush WHERE appUserID = '" + crush.getAppUserID() + "' AND fbCrushID = '" + crush.getfbCrushID() + "'";
@@ -48,13 +68,14 @@ public class CrushSQLRepository extends CrushRepository {
     @Override
     public ArrayList<Crush> getCrushesByUserAppID(String id) throws DbError {
         try {
-            String query = "SELECT * FROM crush WHERE appUserID='" + id + "'";
+            String query = "SELECT * FROM crush WHERE appUserID='" + id + "' ORDER BY createdAt DESC";
             rs = stat.executeQuery(query);
             ArrayList<Crush> crushes = new ArrayList<>();
             while (rs.next()) {
                 String appUserID = rs.getString("appUserID");
                 String fbCrushID = rs.getString("fbCrushID");
-                Crush crush = new Crush(appUserID, fbCrushID);
+                Timestamp timestamp = rs.getTimestamp("createdAt");
+                Crush crush = new Crush(appUserID, fbCrushID, timestamp);
                 crushes.add(crush);
             }
             return crushes;

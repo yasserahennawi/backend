@@ -42,14 +42,18 @@ public class RegisterCrush {
                     throw new ValidationError("Invalid url");
                 }
             }
-            
+
             Crush crush = this.crushFactory.create(normalUser.getAppUserID(), fbCrushID);
             String crushjson = facebookApi.getCrushData(crush, normalUser.getFbToken());
-            this.crushSqlRepo.addCrush(crush);
+            if (this.crushSqlRepo.getNumberOfCrushesByUserAppID(normalUser.getAppUserID()) >= 2) {
+                throw new DbError("Max number of crushes reached");
+            } else {
+                this.crushSqlRepo.addCrush(crush);
+            }
             return crushjson;
-            
+
         } catch (Exception | FbError e) {
-           
+
             throw new ValidationError("Invalid url");
         }
     }
