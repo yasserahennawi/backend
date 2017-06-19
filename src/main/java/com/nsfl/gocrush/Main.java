@@ -25,12 +25,14 @@ import static spark.Spark.get;
 import static spark.Spark.halt;
 import static spark.Spark.options;
 import static spark.Spark.path;
+import static spark.Spark.port;
 import static spark.Spark.post;
 
 public class Main {
 
     public static void main(String[] args) {
 
+        port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
         String backendServerUrl = "http://localhost:4567";
         String fronendServerUrl = "http://127.0.0.1:1111";
@@ -231,6 +233,13 @@ public class Main {
             // Note: this may or may not be necessary in your particular application
             response.type("application/json");
         });
+    }
+    static int getHerokuAssignedPort() {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (processBuilder.environment().get("PORT") != null) {
+            return Integer.parseInt(processBuilder.environment().get("PORT"));
+        }
+        return 4567; //return default port if heroku-port isn't set (i.e. on localhost)
     }
 
 }
