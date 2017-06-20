@@ -16,7 +16,7 @@
             <artifactId>spark-core</artifactId>
             <version>2.5.4</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>3.1.0</version>
@@ -35,7 +35,7 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>6.0.6</version>
-        </dependency>
+        </dependency>-->
     </dependencies>
     <build>
         <plugins>
